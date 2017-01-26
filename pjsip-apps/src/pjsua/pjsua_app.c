@@ -18,6 +18,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA 
  */
 #include "pjsua_app.h"
+#include <unistd.h>
 
 #define THIS_FILE	"pjsua_app.c"
 
@@ -211,6 +212,9 @@ static void on_call_state(pjsua_call_id call_id, pjsip_event *e)
 		      call_id));
 	    log_call_dump(call_id);
 	}
+
+	// Atlassian: exit the application after the call is complete
+	_exit(0);
 
     } else {
 
