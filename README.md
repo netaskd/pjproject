@@ -36,4 +36,11 @@ The binary will be located in `pjsip-apps/bin/`.
 
 ## Usage
 
-TODO
+PJSUA can be launched as follows:
+
+```
+pjsua --config-file jibri.cfg sip:alice@atlanta.com
+```
+
+When doing so, an outgoing call will be automagically started and upon finish
+PJSUA will exit.
