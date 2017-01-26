@@ -7135,6 +7135,17 @@ PJ_DECL(pj_status_t) pjsua_vid_win_rotate(pjsua_vid_win_id wid,
 					  int angle);
 
 
+/**
+ * Set video window full-screen.
+ *
+ * @param wid		The video window ID.
+ * @param enabled   	True if full screen is desired, false otherwise.
+ *
+ * @return		PJ_SUCCESS on success, or the appropriate error code.
+ */
+PJ_DECL(pj_status_t) pjsua_vid_win_set_fullscreen(pjsua_vid_win_id wid,
+                                                  pj_bool_t enabled);
+
 /*
  * Video codecs API
  */
