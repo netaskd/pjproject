@@ -1410,41 +1410,65 @@ pj_status_t call_media_on_event(pjmedia_event *event,
     pj_status_t status = PJ_SUCCESS;
   
     switch(event->type) {
-	case PJMEDIA_EVENT_KEYFRAME_MISSING:
-	    if (call->opt.req_keyframe_method & PJSUA_VID_REQ_KEYFRAME_SIP_INFO)
-	    {
-		pj_timestamp now;
+	case PJMEDIA_EVENT_KEYFRAME_MISSING: {
+            pj_timestamp now;
 
-		pj_get_timestamp(&now);
-		if (pj_elapsed_msec(&call_med->last_req_keyframe, &now) >=
-		    PJSUA_VID_REQ_KEYFRAME_INTERVAL)
-		{
-		    pjsua_msg_data msg_data;
-		    const pj_str_t SIP_INFO = {"INFO", 4};
-		    const char *BODY_TYPE = "application/media_control+xml";
-		    const char *BODY =
-			"<?xml version=\"1.0\" encoding=\"utf-8\" ?>"
-			"<media_control><vc_primitive><to_encoder>"
-			"<picture_fast_update/>"
-			"</to_encoder></vc_primitive></media_control>";
+            pj_get_timestamp(&now);
+            if (pj_elapsed_msec(&call_med->last_req_keyframe, &now) >=
+                PJSUA_VID_REQ_KEYFRAME_INTERVAL)
+            {
+                if (call->opt.req_keyframe_method & PJSUA_VID_REQ_KEYFRAME_SIP_INFO)
+                {
+                    pjsua_msg_data msg_data;
+                    const pj_str_t SIP_INFO = {"INFO", 4};
+                    const char *BODY_TYPE = "application/media_control+xml";
+                    const char *BODY =
+                        "<?xml version=\"1.0\" encoding=\"utf-8\" ?>"
+                        "<media_control><vc_primitive><to_encoder>"
+                        "<picture_fast_update/>"
+                        "</to_encoder></vc_primitive></media_control>";
 
-		    PJ_LOG(4,(THIS_FILE, 
-			      "Sending video keyframe request via SIP INFO"));
+                    PJ_LOG(4,(THIS_FILE, 
+                            "Sending video keyframe request via SIP INFO"));
 
-		    pjsua_msg_data_init(&msg_data);
-		    pj_cstr(&msg_data.content_type, BODY_TYPE);
-		    pj_cstr(&msg_data.msg_body, BODY);
-		    status = pjsua_call_send_request(call->index, &SIP_INFO, 
-						     &msg_data);
-		    if (status != PJ_SUCCESS) {
-			pj_perror(3, THIS_FILE, status,
-				  "Failed requesting keyframe via SIP INFO");
-		    } else {
-			call_med->last_req_keyframe = now;
-		    }
-		}
+                    pjsua_msg_data_init(&msg_data);
+                    pj_cstr(&msg_data.content_type, BODY_TYPE);
+                    pj_cstr(&msg_data.msg_body, BODY);
+                    status = pjsua_call_send_request(call->index, &SIP_INFO, 
+                                                    &msg_data);
+                    if (status != PJ_SUCCESS) {
+                        pj_perror(3, THIS_FILE, status,
+                                "Failed requesting keyframe via SIP INFO");
+                    }
+                }
+
+                if (call->opt.req_keyframe_method & PJSUA_VID_REQ_KEYFRAME_RTCP_PLI)
+                {
+                    PJ_LOG(4,(THIS_FILE, 
+                            "Sending video keyframe request via RTCP PLI"));
+
+	            status = pjmedia_vid_stream_send_rtcp_pli(call_med->strm.v.stream);
+
+                    if (status != PJ_SUCCESS) {
+                        pj_perror(3, THIS_FILE, status,
+                                "Failed requesting keyframe via RTCP PLI");
+                    }
+                }
+
+                if (status == PJ_SUCCESS)
+                {
+                    call_med->last_req_keyframe = now;
+                }
 	    }
 	    break;
+        }
+
+        case PJMEDIA_EVENT_KEYFRAME_REQUESTED: {
+            /* This event is emitted when an RTCP PLI is received. */
+	    PJ_LOG(4,(THIS_FILE, "Received keyframe request via RTCP PLI"));
+	    pjmedia_vid_stream_send_keyframe(call_med->strm.v.stream);
+            break;
+        }
 
 	default:
 	    break;
