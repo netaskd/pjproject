@@ -465,6 +465,17 @@ pjmedia_vid_stream_get_rtp_session_info(pjmedia_vid_stream *stream,
 
 
 /**
+ * Send RTCP PLI for the media stream.
+ *
+ * @param stream	The media stream.
+ *
+ * @return		PJ_SUCCESS on success.
+ */
+PJ_DECL(pj_status_t) pjmedia_vid_stream_send_rtcp_pli(
+						pjmedia_vid_stream *stream);
+
+
+/**
  * @}
  */
 
