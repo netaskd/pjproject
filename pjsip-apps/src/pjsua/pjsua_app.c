@@ -76,7 +76,7 @@ static void arm_keyframe_timer(pjsua_call_id call_id)
     pj_time_val delay;
 
     cd->keyframe_timer.id = call_id;
-    delay.sec = 60;
+    delay.sec = 30;
     delay.msec = 0;
     pjsip_endpt_schedule_timer(endpt, &cd->keyframe_timer, &delay);
 }
