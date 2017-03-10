@@ -24,8 +24,8 @@ apt install build-essential libv4l-dev libsdl2-dev libavcodec-dev libavdevice-de
 Build process:
 
 ```
-git clone git@bitbucket.org:atlassian-video-engineering/jibri-pjsua.git
-cd jibri-pjsua
+git clone https://github.com/jitsi/pjproject
+cd pjproject
 ./configure
 make dep
 make
