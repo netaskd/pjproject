@@ -258,8 +258,24 @@ static void on_call_state(pjsua_call_id call_id, pjsip_event *e)
 	    log_call_dump(call_id);
 	}
 
-	// Atlassian: exit the application after the call is complete
-	_exit(0);
+	/* Jibri: exit the application after the call is complete.
+	 * Use exit codes to communicate how the call was ended:
+	 *  * 0: call ended normally (200)
+	 *  * 1: user refused the call (486, 600, 603, 606)
+	 *  * 2: other SIP error
+	 *
+	 *  See: https://en.wikipedia.org/wiki/List_of_SIP_response_codes
+	 */
+	if (call_info.last_status == 200) {
+	    exit(0);
+	} else if (call_info.last_status == 486 ||
+	           call_info.last_status == 600 ||
+	           call_info.last_status == 603 ||
+	           call_info.last_status == 606) {
+            exit(1);
+        } else {
+            exit(2);
+        }
 
     } else {
 
