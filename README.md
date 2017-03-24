@@ -18,7 +18,7 @@ At the time of this writing FFmpeg + x264 are used as the H.264 implementation.
 Dependencies:
 
 ```
-apt install build-essential libv4l-dev libsdl2-dev libavcodec-dev libavdevice-dev libavfilter-dev libavformat-dev libavresample-dev libavutil-dev libswresample-dev libswscale-dev libasound2-dev
+apt install build-essential libv4l-dev libsdl2-dev libavcodec-dev libavdevice-dev libavfilter-dev libavformat-dev libavresample-dev libavutil-dev libswresample-dev libswscale-dev libasound2-dev libopus-dev
 ```
 
 Build process:
