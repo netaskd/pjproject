@@ -21,6 +21,7 @@
 #include <pjmedia/event.h>
 #include <pjmedia/rtp.h>
 #include <pjmedia/rtcp.h>
+#include <pjmedia/rtcp_fb.h>
 #include <pjmedia/jbuf.h>
 #include <pj/array.h>
 #include <pj/assert.h>
@@ -399,6 +400,23 @@ static pj_status_t stream_event_cb(pjmedia_event *event,
 	    /* Republish this event later from get_frame(). */
 	    pj_memcpy(&stream->miss_keyframe_event, event, sizeof(*event));
 	    return PJ_SUCCESS;
+
+	default:
+	    break;
+	}
+    } else if (event->epub == &stream->rtcp) {
+	/* This is RTCP event */
+	switch (event->type) {
+	case PJMEDIA_EVENT_RX_RTCP_FB: {
+	    pjmedia_event_rx_rtcp_fb_data *data
+		= (pjmedia_event_rx_rtcp_fb_data*)event->data.ptr;
+	    if (data->cap.type == PJMEDIA_RTCP_FB_OTHER
+	    		&& pj_strcmp2(&data->cap.param, "pli") == 0) {
+		PJ_LOG(4, (stream->name.ptr, "PLI received, sending keyframe"));
+		return pjmedia_vid_stream_send_keyframe(stream);
+	    }
+	    break;
+	}
 
 	default:
 	    break;
@@ -1815,6 +1833,10 @@ PJ_DEF(pj_status_t) pjmedia_vid_stream_create(
 	rtcp_setting.samples_per_frame = 1;
 
 	pjmedia_rtcp_init2(&stream->rtcp, &rtcp_setting);
+
+	/* Subscribe to RTCP events */
+	pjmedia_event_subscribe(NULL, &stream_event_cb, stream,
+				&stream->rtcp);
     }
 
     /* Allocate outgoing RTCP buffer, should be enough to hold SR/RR, SDES,
@@ -1934,6 +1956,10 @@ PJ_DEF(pj_status_t) pjmedia_vid_stream_destroy( pjmedia_vid_stream *stream )
     if (stream->transport && !stream->rtcp_sdes_bye_disabled) {
 	send_rtcp(stream, PJ_TRUE, PJ_TRUE);
     }
+
+    /* Unsubscribe from RTCP session events */
+    pjmedia_event_unsubscribe(NULL, &stream_event_cb, stream,
+			      &stream->rtcp);
 
     /* Detach from transport
      * MUST NOT hold stream mutex while detaching from transport, as

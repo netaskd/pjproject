@@ -794,10 +794,18 @@ static void parse_rtcp_fb(pjmedia_rtcp_session *sess,
 
 	/* Sync publish, i.e: don't use PJMEDIA_EVENT_PUBLISH_POST_EVENT */
 	pjmedia_event_publish(NULL, sess, &ev, 0);
-
-	/*  For other FB type implementations later
     } else if (pjmedia_rtcp_fb_parse_pli(pkt, size)==PJ_SUCCESS)
     {
+	const pj_str_t pli_param = { "pli", 3 };
+	pjmedia_event_init(&ev, PJMEDIA_EVENT_RX_RTCP_FB, &ts_now, sess);
+	ev_data.cap.type = PJMEDIA_RTCP_FB_OTHER;
+	ev_data.cap.param = pli_param;
+	ev.data.ptr = &ev_data;
+
+	/* Sync publish, i.e: don't use PJMEDIA_EVENT_PUBLISH_POST_EVENT */
+	pjmedia_event_publish(NULL, sess, &ev, 0);
+
+	/*  For other FB type implementations later
     } else if (pjmedia_rtcp_fb_parse_sli(pkt, size, &cnt, sli)==PJ_SUCCESS)
     {
     } else if (pjmedia_rtcp_fb_parse_rpsi(pkt, size, &rpsi)==PJ_SUCCESS)
