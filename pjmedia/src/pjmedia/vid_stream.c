@@ -204,7 +204,8 @@ static pj_status_t decode_frame(pjmedia_vid_stream *stream,
 
 static pj_status_t send_rtcp(pjmedia_vid_stream *stream,
 			     pj_bool_t with_sdes,
-			     pj_bool_t with_bye);
+			     pj_bool_t with_bye,
+			     pj_bool_t with_pli);
 
 static void on_rx_rtcp( void *data,
                         void *pkt,
@@ -483,7 +484,7 @@ static void send_keep_alive_packet(pjmedia_vid_stream *stream)
 			       pkt_len);
 
     /* Send RTCP */
-    send_rtcp(stream, PJ_TRUE, PJ_FALSE);
+    send_rtcp(stream, PJ_TRUE, PJ_FALSE, PJ_FALSE);
 
     /* Update stats in case the stream is paused */
     stream->rtcp.stat.rtp_tx_last_seq = pj_ntohs(stream->enc->rtp.out_hdr.seq);
@@ -519,7 +520,8 @@ static void send_keep_alive_packet(pjmedia_vid_stream *stream)
 
 static pj_status_t send_rtcp(pjmedia_vid_stream *stream,
 			     pj_bool_t with_sdes,
-			     pj_bool_t with_bye)
+			     pj_bool_t with_bye,
+			     pj_bool_t with_pli)
 {
     void *sr_rr_pkt;
     pj_uint8_t *pkt;
@@ -530,7 +532,7 @@ static pj_status_t send_rtcp(pjmedia_vid_stream *stream,
     /* Build RTCP RR/SR packet */
     pjmedia_rtcp_build_rtcp(&stream->rtcp, &sr_rr_pkt, &len);
 
-    if (with_sdes || with_bye) {
+    if (with_sdes || with_bye || with_pli) {
 	pkt = (pj_uint8_t*) stream->out_rtcp_pkt;
 	pj_memcpy(pkt, sr_rr_pkt, len);
 	max_len = stream->out_rtcp_pkt_size;
@@ -572,6 +574,20 @@ static pj_status_t send_rtcp(pjmedia_vid_stream *stream,
 	}
     }
 
+    /* Build RTCP PLI packet */
+    if (with_pli) {
+	pj_size_t pli_len;
+
+	pli_len = max_len - len;
+	status = pjmedia_rtcp_fb_build_pli(&stream->rtcp, pkt+len, &pli_len);
+	if (status != PJ_SUCCESS) {
+	    PJ_PERROR(4,(stream->name.ptr, status,
+        			     "Error generating RTCP PLI"));
+	} else {
+	    len += (int)pli_len;
+	}
+    }
+
     /* Send! */
     status = pjmedia_transport_send_rtcp(stream->transport, pkt, len);
     if (status != PJ_SUCCESS) {
@@ -608,7 +624,8 @@ static void check_tx_rtcp(pjmedia_vid_stream *stream, pj_uint32_t timestamp)
     } else if (timestamp - stream->rtcp_last_tx >= stream->rtcp_interval) {
 	pj_status_t status;
 
-	status = send_rtcp(stream, !stream->rtcp_sdes_bye_disabled, PJ_FALSE);
+	status = send_rtcp(stream, !stream->rtcp_sdes_bye_disabled,
+			   PJ_FALSE, PJ_FALSE);
 	if (status != PJ_SUCCESS) {
 	    PJ_PERROR(4,(stream->name.ptr, status,
         		 "Error sending RTCP"));
@@ -886,7 +903,7 @@ on_return:
     /* Send RTCP RR and SDES after we receive some RTP packets */
     if (stream->rtcp.received >= 10 && !stream->initial_rr) {
 	status = send_rtcp(stream, !stream->rtcp_sdes_bye_disabled,
-			   PJ_FALSE);
+			   PJ_FALSE, PJ_FALSE);
         if (status != PJ_SUCCESS) {
             PJ_PERROR(4,(stream->name.ptr, status,
             	     "Error sending initial RTCP RR"));
@@ -1954,7 +1971,7 @@ PJ_DEF(pj_status_t) pjmedia_vid_stream_destroy( pjmedia_vid_stream *stream )
 
     /* Send RTCP BYE (also SDES) */
     if (stream->transport && !stream->rtcp_sdes_bye_disabled) {
-	send_rtcp(stream, PJ_TRUE, PJ_TRUE);
+	send_rtcp(stream, PJ_TRUE, PJ_TRUE, PJ_FALSE);
     }
 
     /* Unsubscribe from RTCP session events */
@@ -2217,7 +2234,7 @@ PJ_DEF(pj_status_t) pjmedia_vid_stream_send_rtcp_sdes(
 {
     PJ_ASSERT_RETURN(stream, PJ_EINVAL);
 
-    return send_rtcp(stream, PJ_TRUE, PJ_FALSE);
+    return send_rtcp(stream, PJ_TRUE, PJ_FALSE, PJ_FALSE);
 }
 
 
@@ -2230,7 +2247,23 @@ PJ_DEF(pj_status_t) pjmedia_vid_stream_send_rtcp_bye(
     PJ_ASSERT_RETURN(stream, PJ_EINVAL);
 
     if (stream->enc && stream->transport) {
-	return send_rtcp(stream, PJ_TRUE, PJ_TRUE);
+	return send_rtcp(stream, PJ_TRUE, PJ_TRUE, PJ_FALSE);
+    }
+
+    return PJ_SUCCESS;
+}
+
+
+/*
+ * Send RTCP PLI.
+ */
+PJ_DEF(pj_status_t) pjmedia_vid_stream_send_rtcp_pli(
+						pjmedia_vid_stream *stream)
+{
+    PJ_ASSERT_RETURN(stream, PJ_EINVAL);
+
+    if (stream->enc && stream->transport) {
+	return send_rtcp(stream, PJ_FALSE, PJ_FALSE, PJ_TRUE);
     }
 
     return PJ_SUCCESS;
