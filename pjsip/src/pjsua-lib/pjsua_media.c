@@ -1502,15 +1502,17 @@ pj_status_t call_media_on_event(pjmedia_event *event,
     pj_status_t status = PJ_SUCCESS;
   
     switch(event->type) {
-	case PJMEDIA_EVENT_KEYFRAME_MISSING:
+	case PJMEDIA_EVENT_KEYFRAME_MISSING: {
+	    pj_timestamp now;
+
+	    pj_get_timestamp(&now);
+	    if (pj_elapsed_msec(&call_med->last_req_keyframe, &now) <
+		    PJSUA_VID_REQ_KEYFRAME_INTERVAL) {
+			break;
+	    }
+
 	    if (call->opt.req_keyframe_method & PJSUA_VID_REQ_KEYFRAME_SIP_INFO)
 	    {
-		pj_timestamp now;
-
-		pj_get_timestamp(&now);
-		if (pj_elapsed_msec(&call_med->last_req_keyframe, &now) >=
-		    PJSUA_VID_REQ_KEYFRAME_INTERVAL)
-		{
 		    pjsua_msg_data msg_data;
 		    const pj_str_t SIP_INFO = {"INFO", 4};
 		    const char *BODY_TYPE = "application/media_control+xml";
@@ -1534,9 +1536,22 @@ pj_status_t call_media_on_event(pjmedia_event *event,
 		    } else {
 			call_med->last_req_keyframe = now;
 		    }
+	    }
+
+	    if (call->opt.req_keyframe_method & PJSUA_VID_REQ_KEYFRAME_RTCP_PLI)
+	    {
+		PJ_LOG(4,(THIS_FILE,
+			"Sending video keyframe request via RTCP PLI"));
+		status = pjmedia_vid_stream_send_rtcp_pli(call_med->strm.v.stream);
+		if (status != PJ_SUCCESS) {
+			PJ_PERROR(3,(THIS_FILE, status,
+				  "Failed requesting keyframe via RTCP PLI"));
+		} else {
+			call_med->last_req_keyframe = now;
 		}
 	    }
 	    break;
+	}
 
 #if PJSUA_HAS_VIDEO
 	case PJMEDIA_EVENT_FMT_CHANGED:
