@@ -590,6 +590,7 @@ static void on_call_media_state(pjsua_call_id call_id)
     pjsua_call_info call_info;
     unsigned mi;
     pj_bool_t has_error = PJ_FALSE;
+    pj_bool_t video_handled = PJ_FALSE;
 
     pjsua_call_get_info(call_id, &call_info);
 
@@ -600,9 +601,14 @@ static void on_call_media_state(pjsua_call_id call_id)
 	case PJMEDIA_TYPE_AUDIO:
 	    on_call_audio_state(&call_info, mi, &has_error);
 	    break;
-	case PJMEDIA_TYPE_VIDEO:
-	    on_call_video_state(&call_info, mi, &has_error);
+	case PJMEDIA_TYPE_VIDEO: {
+	    // Jitsi: HACK - Only handle the window for the first m=video line.
+	    if (!video_handled) {
+		on_call_video_state(&call_info, mi, &has_error);
+		video_handled = PJ_TRUE;
+	    }
 	    break;
+	}
 	default:
 	    /* Make gcc happy about enum not handled by switch/case */
 	    break;
