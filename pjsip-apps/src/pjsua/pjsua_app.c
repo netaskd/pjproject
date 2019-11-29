@@ -521,6 +521,9 @@ static void on_call_video_state(pjsua_call_info *ci, unsigned mi,
     if (ci->media_status != PJSUA_CALL_MEDIA_ACTIVE)
 	return;
 
+    if (ci->media[mi].status != PJSUA_CALL_MEDIA_ACTIVE)
+	return;
+
     arrange_window(ci->media[mi].stream.vid.win_in);
 
     PJ_UNUSED_ARG(has_error);
@@ -1008,6 +1011,10 @@ static void on_call_media_event(pjsua_call_id call_id,
 	    size = event->data.fmt_changed.new_fmt.det.vid.size;
 	    if (size.w != win_info.size.w || size.h != win_info.size.h) {
 		pjsua_vid_win_set_size(wid, &size);
+
+		// Jitsi: always full screen, since we only have one window.
+		if (ci.media[med_idx].status == PJSUA_CALL_MEDIA_ACTIVE)
+			pjsua_vid_win_set_fullscreen(wid, PJ_TRUE);
 
 		/* Re-arrange video windows */
 		arrange_window(PJSUA_INVALID_ID);

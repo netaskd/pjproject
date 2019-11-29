@@ -253,8 +253,12 @@ void arrange_window(pjsua_vid_win_id wid)
 	    pos.y += wi.size.h;
     }
 
-    if (wid != PJSUA_INVALID_ID)
+    if (wid != PJSUA_INVALID_ID) {
 	pjsua_vid_win_set_pos(wid, &pos);
+
+	// Jitsi: always full screen, since we only have one window.
+	pjsua_vid_win_set_fullscreen(wid, PJ_TRUE);
+    }
 
 #ifdef USE_GUI
     displayWindow(wid);
