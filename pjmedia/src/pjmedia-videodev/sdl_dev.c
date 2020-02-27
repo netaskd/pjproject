@@ -701,11 +701,13 @@ static pj_status_t sdl_create_window(struct sdl_stream *strm,
             flags |= SDL_WINDOW_HIDDEN;
         }
 
+#if 0
         if ((strm->param.flags & PJMEDIA_VID_DEV_CAP_OUTPUT_FULLSCREEN) &&
             strm->param.window_fullscreen)
         {
             flags |= SDL_WINDOW_FULLSCREEN;
         }
+#endif
 
 #if PJMEDIA_VIDEO_DEV_SDL_HAS_OPENGL
         if (strm->param.rend_id == OPENGL_DEV_IDX)
@@ -1209,6 +1211,14 @@ static pj_status_t set_cap(void *data)
 		      hwnd->info.window));
 	return status;	
     } else if (cap == PJMEDIA_VID_DEV_CAP_OUTPUT_FULLSCREEN) {
+        if (*(pj_bool_t *)pval) {
+            SDL_SetWindowBordered(strm->window, SDL_FALSE);
+            SDL_MaximizeWindow(strm->window);
+        } else {
+            SDL_SetWindowBordered(strm->window, SDL_TRUE);
+            SDL_RestoreWindow(strm->window);
+        }
+#if 0
         Uint32 flag;
 
 	flag = SDL_GetWindowFlags(strm->window);
@@ -1228,7 +1238,7 @@ static pj_status_t set_cap(void *data)
 	    SDL_SetWindowBordered(strm->window, SDL_FALSE);
 	    SDL_SetWindowBordered(strm->window, SDL_TRUE);
 	}
-
+#endif
 	return PJ_SUCCESS;
     }
 
