@@ -37,9 +37,7 @@
 #define THIS_FILE		"v4l2_dev.c"
 #define DRIVER_NAME		"v4l2"
 #define V4L2_MAX_DEVS		4
-#define DEFAULT_WIDTH		640
-#define DEFAULT_HEIGHT		480
-#define DEFAULT_FPS		25
+#define DEFAULT_FPS		30
 #define DEFAULT_CLOCK_RATE	90000
 #define INVALID_FD		-1
 #define BUFFER_CNT		2
