@@ -367,8 +367,9 @@ static pj_status_t handle_event(void *data)
         if (strm && pevent.type != PJMEDIA_EVENT_NONE) {
             pj_status_t status;
 
+#if 0
 	    pjmedia_event_publish(NULL, strm, &pevent, 0);
-
+#endif
 	    switch (pevent.type) {
 	    case PJMEDIA_EVENT_WND_RESIZED:
                 status = resize_disp(strm, &pevent.data.wnd_resized.new_size);
@@ -704,7 +705,7 @@ static pj_status_t sdl_create_window(struct sdl_stream *strm,
         if ((strm->param.flags & PJMEDIA_VID_DEV_CAP_OUTPUT_FULLSCREEN) &&
             strm->param.window_fullscreen)
         {
-            flags |= SDL_WINDOW_FULLSCREEN;
+            flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
         }
 
 #if PJMEDIA_VIDEO_DEV_SDL_HAS_OPENGL
@@ -1111,7 +1112,7 @@ static pj_status_t get_cap(void *data)
 	return PJ_SUCCESS;
     } else if (cap == PJMEDIA_VID_DEV_CAP_OUTPUT_FULLSCREEN) {
 	Uint32 flag = SDL_GetWindowFlags(strm->window);
-	*((pj_bool_t *)pval) = (flag & SDL_WINDOW_FULLSCREEN)? PJ_TRUE: PJ_FALSE;
+	*((pj_bool_t *)pval) = (flag & SDL_WINDOW_FULLSCREEN_DESKTOP)? PJ_TRUE: PJ_FALSE;
 	return PJ_SUCCESS;
     }
 
@@ -1191,9 +1192,26 @@ static pj_status_t set_cap(void *data)
 	return status;
     } else if (cap == PJMEDIA_VID_DEV_CAP_OUTPUT_RESIZE) {
 	pjmedia_rect_size *new_size = (pjmedia_rect_size *)pval;
+        Uint32 flag = SDL_GetWindowFlags(strm->window);
+        pj_status_t status;
+
+        /**
+         * Exit full-screen if engaged, since resizing while in full-screen is not well-supported.
+         */
+	if (flag & SDL_WINDOW_FULLSCREEN_DESKTOP)
+            SDL_SetWindowFullscreen(strm->window, 0);
 
 	SDL_SetWindowSize(strm->window, new_size->w, new_size->h);
-        return resize_disp(strm, new_size);
+
+        status = resize_disp(strm, new_size);
+
+        /**
+         * Restore full-screen mode.
+         */
+	if (flag & SDL_WINDOW_FULLSCREEN_DESKTOP)
+            SDL_SetWindowFullscreen(strm->window, SDL_WINDOW_FULLSCREEN_DESKTOP);
+
+        return status;
     } else if (cap == PJMEDIA_VID_DEV_CAP_OUTPUT_WINDOW) {
 	pjmedia_vid_dev_hwnd *hwnd = (pjmedia_vid_dev_hwnd*)pval;
 	pj_status_t status = PJ_SUCCESS;
@@ -1209,13 +1227,11 @@ static pj_status_t set_cap(void *data)
 		      hwnd->info.window));
 	return status;	
     } else if (cap == PJMEDIA_VID_DEV_CAP_OUTPUT_FULLSCREEN) {
-        Uint32 flag;
-
-	flag = SDL_GetWindowFlags(strm->window);
+        Uint32 flag = SDL_GetWindowFlags(strm->window);
         if (*(pj_bool_t *)pval)
-            flag |= SDL_WINDOW_FULLSCREEN;
+            flag |= SDL_WINDOW_FULLSCREEN_DESKTOP;
         else
-            flag &= (~SDL_WINDOW_FULLSCREEN);
+            flag &= (~SDL_WINDOW_FULLSCREEN_DESKTOP);
 
         SDL_SetWindowFullscreen(strm->window, flag);
 

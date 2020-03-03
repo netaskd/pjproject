@@ -1067,8 +1067,8 @@ static void on_call_media_event(pjsua_call_id call_id,
 		pjsua_vid_win_set_size(wid, &size);
 
 		// Jitsi: always full screen, since we only have one window.
-		if (ci.media[med_idx].status == PJSUA_CALL_MEDIA_ACTIVE)
-			pjsua_vid_win_set_fullscreen(wid, PJ_TRUE);
+		//if (ci.media[med_idx].status == PJSUA_CALL_MEDIA_ACTIVE)
+		//	pjsua_vid_win_set_fullscreen(wid, PJ_TRUE);
 
 		/* Re-arrange video windows */
 		arrange_window(PJSUA_INVALID_ID);

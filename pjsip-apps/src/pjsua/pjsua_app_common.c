@@ -230,7 +230,7 @@ void app_config_init_video(pjsua_acc_config *acc_cfg)
  */
 void arrange_window(pjsua_vid_win_id wid)
 {
-#if PJSUA_HAS_VIDEO
+#if 0
     pjmedia_coord pos;
     int i, last;
 
@@ -257,7 +257,7 @@ void arrange_window(pjsua_vid_win_id wid)
 	pjsua_vid_win_set_pos(wid, &pos);
 
 	// Jitsi: always full screen, since we only have one window.
-	pjsua_vid_win_set_fullscreen(wid, PJ_TRUE);
+	//pjsua_vid_win_set_fullscreen(wid, PJ_TRUE);
     }
 
 #ifdef USE_GUI
