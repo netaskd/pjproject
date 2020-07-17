@@ -1,5 +1,5 @@
 /* $Id$ */
-/* 
+/*
  * Copyright (C)2019 Teluu Inc. (http://www.teluu.com)
  *
  * This program is free software; you can redistribute it and/or modify
@@ -14,7 +14,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA 
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 #include <pjmedia-codec/vpx.h>
 #include <pjmedia/vid_codec_util.h>
@@ -46,8 +46,8 @@
 #  define DEFAULT_WIDTH		352
 #  define DEFAULT_HEIGHT	288
 #else
-#  define DEFAULT_WIDTH		1280
-#  define DEFAULT_HEIGHT	720
+#  define DEFAULT_WIDTH		1920
+#  define DEFAULT_HEIGHT	1080
 #endif
 
 #define DEFAULT_FPS		30
@@ -431,7 +431,7 @@ static pj_status_t vpx_codec_open(pjmedia_vid_codec *codec,
     	PJ_LOG(3, (THIS_FILE, "Failed to get encoder default config"));
 	return PJMEDIA_CODEC_EFAILED;
     }
-    
+
     cfg.g_w = vpx_data->prm->enc_fmt.det.vid.size.w;
     cfg.g_h = vpx_data->prm->enc_fmt.det.vid.size.h;
     /* timebase is the inverse of fps */
@@ -439,7 +439,7 @@ static pj_status_t vpx_codec_open(pjmedia_vid_codec *codec,
     cfg.g_timebase.den = vpx_data->prm->enc_fmt.det.vid.fps.num;
     /* bitrate in KBps */
     cfg.rc_target_bitrate = vpx_data->prm->enc_fmt.det.vid.avg_bps / 1000;
-    
+
     cfg.g_pass = VPX_RC_ONE_PASS;
     cfg.rc_end_usage = VPX_CBR;
     cfg.g_threads = 4;
@@ -590,7 +590,7 @@ static pj_status_t vpx_codec_encode_begin(pjmedia_vid_codec *codec,
             	vpx_data->enc_frame_is_keyframe = PJ_TRUE;
             else
             	vpx_data->enc_frame_is_keyframe = PJ_FALSE;
-            	
+
             break;
     	}
     } while (1);
@@ -607,7 +607,7 @@ static pj_status_t vpx_codec_encode_begin(pjmedia_vid_codec *codec,
 	    return PJ_SUCCESS;
 	}
     }
-    
+
     if (vpx_data->whole) {
     	*has_more = PJ_FALSE;
 	if (vpx_data->enc_frame_size > out_size)
@@ -622,7 +622,7 @@ static pj_status_t vpx_codec_encode_begin(pjmedia_vid_codec *codec,
         }
 
         pj_memcpy(output->buf, vpx_data->enc_frame_whole, output->size);
-        
+
         return PJ_SUCCESS;
     }
 
@@ -641,7 +641,7 @@ static pj_status_t vpx_codec_encode_more(pjmedia_vid_codec *codec,
                      PJ_EINVAL);
 
     vpx_data = (vpx_codec_data*) codec->codec_data;
-    
+
     if (vpx_data->enc_processed < vpx_data->enc_frame_size) {
     	unsigned payload_desc_size = 1;
         unsigned max_size = vpx_data->prm->enc_mtu - payload_desc_size;
@@ -763,11 +763,11 @@ static pj_status_t vpx_unpacketize(struct vpx_codec_data *vpx_data,
 	if (p[0] & 0x2) {
 	    unsigned char *q = p + desc_len;
 	    unsigned N_S = (*q >> 5) + 1;
-	    
+
 	    INC_DESC_LEN();
 	    /* Y: Each spatial layer's frame resolution present. */
 	    if (*q & 0x10) desc_len += N_S * 4;
-	    
+
 	    /* G: PG description present flag. */
 	    if (*q & 0x8) {
 	    	unsigned j;
@@ -837,7 +837,7 @@ static pj_status_t vpx_codec_decode_(pjmedia_vid_codec *codec,
     	    unsigned desc_len;
     	    unsigned packet_size = packets[i].size;
     	    pj_status_t status;
-    	
+
     	    status = vpx_unpacketize(vpx_data, packets[i].buf, packet_size,
     				     &desc_len);
     	    if (status != PJ_SUCCESS) {
@@ -845,12 +845,12 @@ static pj_status_t vpx_codec_decode_(pjmedia_vid_codec *codec,
 	    	return status;
     	    }
 
-    	    packet_size -= desc_len;	
+    	    packet_size -= desc_len;
     	    if (whole_len + packet_size > vpx_data->dec_buf_size) {
 	    	PJ_LOG(4,(THIS_FILE, "Decoding buffer overflow [2]"));
 	    	return PJMEDIA_CODEC_EFRMTOOSHORT;
             }
-        
+
 	    pj_memcpy(vpx_data->dec_buf + whole_len,
 		      (char *)packets[i].buf + desc_len, packet_size);
 	    whole_len += packet_size;
@@ -920,7 +920,7 @@ static pj_status_t vpx_codec_decode_(pjmedia_vid_codec *codec,
     }
 
     output->size = pos;
-	
+
 on_return:
     if (!has_frame) {
 	pjmedia_event event;
